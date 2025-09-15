@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Average Atomic Mass Simulation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .bean { 
+      width: 30px; 
+      height: 20px; 
+      border-radius: 50% / 30%; 
+      display: inline-block; 
+      margin: 5px; 
+      cursor: grab; 
+      text-align: center; 
+    }
+    .Kidney { background-color: #a52a2a; }
+    .Black { background-color: #000000; }
+    .Pinto { background-color: #deb887; }
+    #sampleArea, #scaleArea { 
+      border: 2px dashed #ccc; 
+      padding: 10px; 
+      min-height: 100px; 
+      margin-bottom: 20px; 
+    }
+    #scaleArea { background-color: #f9f9f9; }
+    #controls { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Average Atomic Mass Simulation</h2>
+
+<div id="controls">
+  <button onclick="generateBeans()">Generate 100 Beans</button>
+  <button onclick="resetScale()">Reset Scale</button>
+</div>
+
+<h3>Sample Area</h3>
+<div id="sampleArea" ondragover="allowDrop(event)" ondrop="dropToSample(event)"></div>
+
+<h3>Electronic Balance</h3>
+<div id="scaleArea" ondragover="allowDrop(event)" ondrop="dropToScale(event)">
+  <p>Total Mass: <span id="totalMass">0.00</span> g</p>
+</div>
+
+<script>
+  let beans = [];
+  let scaleBeans = [];
+  const beanTypes = {
+    Kidney: { min: 0.9, max: 1.1 },
+    Black: { min: 0.5, max: 0.7 },
+    Pinto: { min: 0.7, max: 0.9 }
+  };
+
+  function randomMass(type) {
+    const range = beanTypes[type];
+    return +(Math.random() * (range.max - range.min) + range.min).toFixed(2);
+  }
+
+  function generateBeans() {
+    beans = [];
+    scaleBeans = [];
+    const sampleArea = document.getElementById("sampleArea");
+    sampleArea.innerHTML = "";
+    document.getElementById("scaleArea").innerHTML = '<p>Total Mass: <span id="totalMass">0.00</span> g</p>';
+
+    const types = Object.keys(beanTypes);
+    for (let i = 0; i < 100; i++) {
+      const type = types[Math.floor(Math.random() * types.length)];
+      const mass = randomMass(type);
+      const bean = document.createElement("div");
+      bean.className = `bean ${type}`;
+      bean.draggable = true;
+      bean.dataset.mass = mass;
+      bean.dataset.id = "bean" + i;
+      bean.addEventListener("dragstart", drag);
+      sampleArea.appendChild(bean);
+      beans.push(bean);
+    }
+  }
+
+  function drag(event) {
+    event.dataTransfer.setData("text", event.target.dataset.id);
+  }
+
+  function allowDrop(event) {
+    event.preventDefault();
+  }
+
+  function dropToScale(event) {
+    event.preventDefault();
+    const id = event.dataTransfer.getData("text");
+    const bean = document.querySelector(`[data-id='${id}']`);
+    if (bean && bean.parentElement.id === "sampleArea") {
+      document.getElementById("scaleArea").appendChild(bean);
+      scaleBeans.push(bean);
+      updateMass();
+    }
+  }
+
+  function dropToSample(event) {
+    event.preventDefault();
+    const id = event.dataTransfer.getData("text");
+    const bean = document.querySelector(`[data-id='${id}']`);
+    if (bean && bean.parentElement.id === "scaleArea") {
+      document.getElementById("sampleArea").appendChild(bean);
+      scaleBeans = scaleBeans.filter(b => b.dataset.id !== id);
+      updateMass();
+    }
+  }
+
+  function updateMass() {
+    let total = 0;
+    scaleBeans.forEach(bean => {
+      total += parseFloat(bean.dataset.mass);
+    });
+    document.getElementById("totalMass").textContent = total.toFixed(2);
+  }
+
+  function resetScale() {
+    const sampleArea = document.getElementById("sampleArea");
+    scaleBeans.forEach(bean => {
+      sampleArea.appendChild(bean);
+    });
+    scaleBeans = [];
+    updateMass();
+  }
+</script>
+
+</body>
+</html>
